@@ -1,44 +1,43 @@
-import { AuthProvider, HttpError } from "react-admin";
-import data from "./users.json";
+import { AUTH_LOGIN,AUTH_LOGOUT,AUTH_ERROR, AUTH_CHECK } from 'react-admin';
 
-/**
- * This authProvider is only for test purposes. Don't use it in production.
- */
-export const authProvider: AuthProvider = {
-  login: ({ username, password }) => {
-    const user = data.users.find(
-      (u) => u.username === username && u.password === password,
-    );
+export default (type : any, params : any) => {
+    if (type === AUTH_LOGIN) {
+        const { username, password } = params;
+        const request = new Request(`http://127.0.0.1:3000/auth/login`, {
+            method: 'POST',
+            body: JSON.stringify({ Email : username,MotDePasse: password }),
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+        });
 
-    if (user) {
-      // eslint-disable-next-line no-unused-vars, @typescript-eslint/no-unused-vars
-      let { password, ...userToPersist } = user;
-      localStorage.setItem("user", JSON.stringify(userToPersist));
-      return Promise.resolve();
+        return fetch(request)
+            .then(response => {
+                if (response.status < 200 || response.status >= 300) {
+                        throw new Error(response.statusText); 
+                }
+                return response.json();
+            })
+            .then((data) => {
+                const { MotDePasse, ...userToPersist } = data.data.user;
+                localStorage.setItem('user', JSON.stringify(userToPersist));
+            })
     }
-
-    return Promise.reject(
-      new HttpError("Unauthorized", 401, {
-        message: "Invalid username or password",
-      }),
-    );
-  },
-  logout: () => {
-    localStorage.removeItem("user");
+    if (type === AUTH_LOGOUT) {
+      localStorage.removeItem('user');
+      return Promise.resolve();
+  }
+  if (type === AUTH_ERROR) {
+    const status  = params.status;
+    if (status === 401 || status === 403) {
+        localStorage.removeItem('user');
+        return Promise.reject();
+    }
+    
     return Promise.resolve();
-  },
-  checkError: () => Promise.resolve(),
-  checkAuth: () =>
-    localStorage.getItem("user") ? Promise.resolve() : Promise.reject(),
-  getPermissions: () => {
-    return Promise.resolve(undefined);
-  },
-  getIdentity: () => {
-    const persistedUser = localStorage.getItem("user");
-    const user = persistedUser ? JSON.parse(persistedUser) : null;
+}
+if (type === AUTH_CHECK) {
+  return localStorage.getItem('user') ? Promise.resolve() : Promise.reject();
+}
+    return Promise.resolve();
 
-    return Promise.resolve(user);
-  },
 };
 
-export default authProvider;
