@@ -3,7 +3,7 @@ import { AUTH_LOGIN,AUTH_LOGOUT,AUTH_ERROR, AUTH_CHECK } from 'react-admin';
 export default (type : any, params : any) => {
     if (type === AUTH_LOGIN) {
         const { username, password } = params;
-        const request = new Request(`http://127.0.0.1:3000/auth/login`, {
+        const request = new Request(`http://localhost/api/auth/login`, {
             method: 'POST',
             body: JSON.stringify({ Email : username,MotDePasse: password }),
             headers: new Headers({ 'Content-Type': 'application/json' }),
